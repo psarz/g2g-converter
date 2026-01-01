@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitLab CI to GitHub Actions Converter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .navbar-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar-title {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .navbar-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            text-decoration: none;
+            transition: transform 0.3s, box-shadow 0.3s;
+            display: inline-block;
+        }
+
+        .navbar-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .hero {
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 4rem 2rem;
+            text-align: center;
+            color: #333;
+        }
+
+        .hero-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #667eea;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: #666;
+            margin-bottom: 2rem;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 1rem 2.5rem;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn-secondary {
+            background-color: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .btn-secondary:hover {
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .content {
+            background-color: white;
+            padding: 3rem;
+            margin: 2rem auto;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .content h2 {
+            color: #667eea;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            font-size: 2rem;
+        }
+
+        .content h3 {
+            color: #764ba2;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            font-size: 1.5rem;
+        }
+
+        .content h4 {
+            color: #666;
+            margin-top: 1.25rem;
+            margin-bottom: 0.5rem;
+            font-size: 1.2rem;
+        }
+
+        .content ul {
+            margin: 1rem 0 1rem 2rem;
+        }
+
+        .content li {
+            margin: 0.5rem 0;
+        }
+
+        .content p {
+            margin: 1rem 0;
+            color: #555;
+            line-height: 1.8;
+        }
+
+        .content a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .content a:hover {
+            text-decoration: underline;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        .feature-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 2rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .feature-card h4 {
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card p {
+            color: #666;
+            font-size: 0.95rem;
+        }
+
+        .code-block {
+            background-color: #f5f5f5;
+            border-left: 4px solid #667eea;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .ui-preview {
+            margin: 2rem 0;
+            text-align: center;
+        }
+
+        .ui-preview img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .footer {
+            background-color: #222;
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            margin-top: 3rem;
+        }
+
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .hero p {
+                font-size: 1rem;
+            }
+
+            .navbar-title {
+                font-size: 1.2rem;
+            }
+
+            .content {
+                padding: 1.5rem;
+            }
+
+            .navbar-content {
+                padding: 0 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-content">
+            <div class="navbar-title">🔄 GitLab → GitHub</div>
+            <a href="frontend/index.html" class="navbar-button">Launch Converter</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="hero">
+        <div class="hero-content">
+            <h1>GitLab CI to GitHub Actions Converter</h1>
+            <p>Transform your GitLab CI/CD pipelines into GitHub Actions workflows with intelligent analysis and visualization</p>
+            <div class="hero-buttons">
+                <a href="frontend/index.html" class="btn btn-primary">🚀 Launch Application</a>
+                <a href="#features" class="btn btn-secondary">📚 Learn More</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="content">
+            <!-- User Interface Section -->
+            <h2 id="ui">✨ User Interface</h2>
+            <div class="ui-preview">
+                <img src="ui.png" alt="GitLab to GitHub Converter UI">
+                <p><em>The web interface provides a modern, intuitive design with real-time visualization of pipeline dependencies and automatic workflow conversion.</em></p>
+            </div>
+
+            <!-- Features Section -->
+            <h2 id="features">🎯 Features</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>📊 Visual Dependency Graph</h4>
+                    <p>Interactive D3.js visualization of job dependencies and pipeline structure</p>
+                </div>
+                <div class="feature-card">
+                    <h4>🔄 Automatic Conversion</h4>
+                    <p>Convert GitLab CI YAML to GitHub Actions workflows instantly</p>
+                </div>
+                <div class="feature-card">
+                    <h4>🔍 Deep Analysis</h4>
+                    <p>Extract and visualize variables, secrets, and job references</p>
+                </div>
+                <div class="feature-card">
+                    <h4>📈 Pipeline Metrics</h4>
+                    <p>Calculate critical paths and detect circular dependencies</p>
+                </div>
+                <div class="feature-card">
+                    <h4>🚀 Modern Web UI</h4>
+                    <p>Responsive interface hosted on GitHub Pages</p>
+                </div>
+                <div class="feature-card">
+                    <h4>💾 Export Workflows</h4>
+                    <p>Download generated GitHub workflows directly</p>
+                </div>
+            </div>
+
+            <!-- Getting Started -->
+            <h2>🚀 Getting Started</h2>
+            <h3>Quick Start</h3>
+            <ol>
+                <li><strong>Launch the app:</strong> Click the "Launch Application" button above</li>
+                <li><strong>Upload your file:</strong> Drag and drop or select your <code>.gitlab-ci.yaml</code> file</li>
+                <li><strong>View results:</strong> See dependency graph and converted GitHub workflow</li>
+                <li><strong>Download:</strong> Get your GitHub Actions workflow file</li>
+            </ol>
+
+            <h3>Backend Setup (Local)</h3>
+            <div class="code-block">
+git clone https://github.com/yourusername/g2g-converter.git
+cd g2g-converter/backend
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python run.py
+            </div>
+            <p>The API will be available at <code>http://localhost:5000</code></p>
+
+            <h3>Frontend Setup (Local)</h3>
+            <div class="code-block">
+cd ../frontend
+python -m http.server 8000
+            </div>
+            <p>Open <code>http://localhost:8000</code> in your browser</p>
+
+            <!-- Key Capabilities -->
+            <h2>💡 Key Capabilities</h2>
+            <h3>GitLab CI Parser</h3>
+            <ul>
+                <li>Parses stages, jobs, variables, and secrets</li>
+                <li>Extracts job dependencies and artifacts</li>
+                <li>Handles GitLab CI advanced features (rules, needs, when conditions)</li>
+                <li>Supports variable expansion and protection flags</li>
+            </ul>
+
+            <h3>GitHub Actions Converter</h3>
+            <ul>
+                <li>Converts GitLab stages to GitHub job workflows</li>
+                <li>Maps job dependencies to GitHub <code>needs</code></li>
+                <li>Converts GitLab variables to GitHub secrets/env</li>
+                <li>Generates setup actions for common languages</li>
+                <li>Handles artifact uploads and caching</li>
+            </ul>
+
+            <h3>Dependency Graph</h3>
+            <ul>
+                <li>Visual representation using D3.js</li>
+                <li>Interactive node highlighting</li>
+                <li>Displays job stages with color coding</li>
+                <li>Shows artifact and direct dependencies</li>
+                <li>Detects and highlights circular dependencies</li>
+            </ul>
+
+            <!-- API Documentation -->
+            <h2>🔌 API Endpoints</h2>
+            <div class="code-block">
+POST /api/convert          - Convert GitLab CI to GitHub Actions
+POST /api/analyze          - Analyze pipeline and generate graph
+POST /api/upload           - Upload and process YAML file
+POST /api/validate         - Validate YAML syntax
+GET  /api/health           - Health check
+            </div>
+
+            <!-- Documentation Links -->
+            <h2>📚 Documentation</h2>
+            <ul>
+                <li><a href="QUICK_START_FRONTEND.md">Quick Start Guide</a> - Get started in minutes</li>
+                <li><a href="FRONTEND_UPDATES.md">Frontend Documentation</a> - Technical details</li>
+                <li><a href="FILE_PROCESSING_CHANGES.md">File Processing Guide</a> - How automatic file reading works</li>
+                <li><a href="IMPLEMENTATION_SUMMARY.md">Implementation Summary</a> - Complete overview</li>
+                <li><a href="API.md">API Documentation</a> - Full API reference</li>
+                <li><a href="ARCHITECTURE.md">Architecture</a> - System design</li>
+            </ul>
+
+            <!-- Support -->
+            <h2>💬 Support & Contribution</h2>
+            <p>
+                Found a bug? Have a suggestion? We'd love to hear from you!
+                <br><br>
+                Please visit our <a href="https://github.com/yourusername/g2g-converter" target="_blank">GitHub repository</a> to:
+            </p>
+            <ul>
+                <li>Report issues</li>
+                <li>Request features</li>
+                <li>Contribute improvements</li>
+                <li>View source code</li>
+            </ul>
+
+            <!-- Technology Stack -->
+            <h2>🛠️ Technology Stack</h2>
+            <ul>
+                <li><strong>Frontend:</strong> HTML5, CSS3, JavaScript (Vanilla JS)</li>
+                <li><strong>Visualization:</strong> D3.js v7</li>
+                <li><strong>Backend:</strong> Python, Flask</li>
+                <li><strong>YAML Parsing:</strong> PyYAML</li>
+                <li><strong>Hosting:</strong> GitHub Pages (Frontend) + Any Python server (Backend)</li>
+            </ul>
+
+            <!-- License -->
+            <h2>📄 License</h2>
+            <p>
+                This project is licensed under the MIT License - see the LICENSE file for details.
+            </p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>
+            <strong>GitLab CI to GitHub Actions Converter</strong>
+            <br>
+            <em>Transform your CI/CD pipelines with ease</em>
+        </p>
+        <p style="margin-top: 1rem; font-size: 0.9rem;">
+            © 2026 | <a href="https://github.com/yourusername/g2g-converter" target="_blank">View on GitHub</a>
+        </p>
+    </div>
+
+    <script>
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                const href = this.getAttribute('href');
+                if (href !== '#') {
+                    e.preventDefault();
+                    const element = document.querySelector(href);
+                    if (element) {
+                        element.scrollIntoView({
+                            behavior: 'smooth'
+                        });
+                    }
+                }
+            });
+        });
+
+        // Scroll to top on logo click
+        document.querySelector('.navbar-title').addEventListener('click', function() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+    </script>
+</body>
+</html>
