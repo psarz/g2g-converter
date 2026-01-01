@@ -1,0 +1,156 @@
+stages:
+  - build
+  - test
+  - deploy
+
+variables:
+  REGISTRY_URL: registry.example.com
+  BUILD_IMAGE: ${REGISTRY_URL}/builder:latest
+  DOCKER_TLS_CERTDIR: ""
+
+before_script:
+  - echo "Pipeline started at $(date)"
+  - export BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+
+default:
+  image: ubuntu:22.04
+  retry:
+    max: 2
+    when: [runner_system_failure]
+  timeout: 1h
+
+# Build Stage
+build:
+  stage: build
+  image: ${BUILD_IMAGE}
+  variables:
+    BUILD_ENV: "production"
+  script:
+    - echo "Building application..."
+    - make build
+    - make test:unit
+  artifacts:
+    paths:
+      - dist/
+      - build/
+    expire_in: 30 days
+    reports:
+      junit: test-results.xml
+  cache:
+    paths:
+      - node_modules/
+      - .gradle/
+  tags:
+    - docker
+    - linux
+
+# Test Stage
+test:unit:
+  stage: test
+  image: python:3.11
+  dependencies:
+    - build
+  script:
+    - pip install -r requirements-test.txt
+    - pytest tests/ --cov=src --cov-report=xml
+    - coverage report
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+  allow_failure: false
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push"
+      when: always
+    - if: $CI_PIPELINE_SOURCE == "merge_request"
+      when: always
+
+test:integration:
+  stage: test
+  image: docker:24.0
+  needs:
+    - build
+  services:
+    - docker:24.0-dind
+  script:
+    - docker build -t test:latest .
+    - docker run --rm test:latest npm run test:integration
+  when: manual
+  allow_failure: true
+
+test:security:
+  stage: test
+  image: aquasec/trivy:latest
+  script:
+    - trivy image --severity HIGH,CRITICAL ${REGISTRY_URL}/app:latest
+  allow_failure: false
+
+# Deploy Stage
+deploy:staging:
+  stage: deploy
+  image: alpine:3.18
+  environment:
+    name: staging
+    url: https://staging.example.com
+    auto_stop_in: 1 week
+  needs:
+    - test:unit
+    - test:security
+  variables:
+    DEPLOY_ENV: "staging"
+    REPLICAS: "1"
+  script:
+    - echo "Deploying to staging..."
+    - apk add --no-cache curl
+    - curl -X POST https://api.example.com/deploy -d @deploy-config.json
+  only:
+    - develop
+  when: on_success
+  retry:
+    max: 3
+    when: [script_failure]
+
+deploy:production:
+  stage: deploy
+  image: alpine:3.18
+  environment:
+    name: production
+    url: https://api.example.com
+    kubernetes:
+      namespace: production
+  needs:
+    - test:unit
+    - test:security
+    - deploy:staging
+  variables:
+    DEPLOY_ENV: "production"
+    REPLICAS: "3"
+  script:
+    - echo "Deploying to production..."
+    - ./scripts/deploy.sh
+  only:
+    - main
+    - tags
+  when: manual
+  allow_failure: false
+  timeout: 2h
+
+# Scheduled cleanup job
+cleanup:artifacts:
+  stage: deploy
+  script:
+    - echo "Cleaning up old artifacts..."
+  only:
+    - schedules
+  variables:
+    SCHEDULE_TYPE: "nightly"
+
+after_script:
+  - echo "Pipeline completed at $(date)"
+  - |
+    if [ $CI_JOB_STATUS == "success" ]; then
+      echo "✅ Job successful"
+    else
+      echo "❌ Job failed"
+    fi

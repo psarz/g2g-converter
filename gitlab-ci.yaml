@@ -1,0 +1,92 @@
+# Use the needs keyword to run jobs as soon as their dependencies are met (DAG)
+# rather than waiting for an entire stage to complete.
+# The 'needs' logic takes precedence over the 'stage' logic.
+
+variables:
+  # Define global variables accessible to all jobs.
+  DOCKER_IMAGE_TAG: $CI_COMMIT_SHORT_SHA
+  # Use inputs in manual pipelines for enhanced security and flexibility.
+  ENVIRONMENT_INPUT:
+    value: "staging"
+    description: "Target environment (staging or production)"
+
+default:
+  # Define defaults for all jobs, like the base Docker image.
+  image: "docker:20.10.16"
+  tags:
+    - docker-runner # Specify a specific runner with a tag if needed.
+
+stages:
+  - build # The build stage compiles the code.
+  - test # The test stage runs various tests.
+  - deploy # The deploy stage prepares for production deployment.
+  - acceptance # Custom stage for acceptance tests
+
+# --- Hidden Jobs (Templates) for Reusability ---
+# Jobs starting with a '.' are hidden and used as templates with 'extends'.
+.code_changes_only:
+  # This template is for jobs that should only run if specific code files change.
+  rules:
+    - changes:
+        - "src/**/*"
+        - "tests/**/*"
+      # Only run this if the files in src or tests change for merge requests or default branches.
+      if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+
+.build_template:
+  extends: .code_changes_only
+  stage: build
+  script:
+    - echo "Building Docker image: my-app:$DOCKER_IMAGE_TAG"
+    - docker build -t my-app:$DOCKER_IMAGE_TAG .
+    - docker push my-app:$DOCKER_IMAGE_TAG
+  # Save the built image as an artifact so subsequent jobs can use it.
+  artifacts:
+    paths:
+      - docker-image.tar
+
+# --- Main Pipeline Jobs ---
+
+build-app:
+  extends: .build_template
+  needs: [] # No dependencies, runs at the start of the build stage.
+
+unit-test:
+  stage: test
+  needs: ["build-app"] # Runs immediately after 'build-app' succeeds, regardless of other jobs.
+  image: "python:3.9" # Use a different image for this specific job.
+  script:
+    - echo "Running unit tests"
+    - python -m unittest discover tests/unit
+
+integration-test:
+  stage: test
+  needs: ["build-app"] # Can run in parallel with unit-test if resources allow.
+  script:
+    - echo "Running integration tests"
+    # Commands to run integration tests using the artifact from build-app
+
+deploy-staging:
+  stage: deploy
+  needs: ["unit-test", "integration-test"] # Requires both test jobs to pass.
+  script:
+    - echo "Deploying to staging environment"
+    # Use environment variables to pass configuration to your deployment scripts.
+    - bash ./deploy_script.sh staging
+  rules:
+    # Only runs for commits to the default branch or manually if "staging" is specified.
+    - if: '$CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH || $ENVIRONMENT_INPUT == "staging"'
+
+# --- Child Pipeline Trigger (for advanced mono-repo/dynamic use cases) ---
+# A parent pipeline can trigger child pipelines to manage complexity or monorepos efficiently.
+
+trigger-acceptance-tests:
+  stage: acceptance
+  trigger:
+    include:
+      - local: "cicd/acceptance-tests.yml" # Path to the child pipeline config.
+    strategy: depend # The parent pipeline waits for the child pipeline to finish.
+  rules:
+    # This job only runs if the 'deploy-staging' job was successful.
+    - if: '$CI_JOB_STATUS == "success" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+

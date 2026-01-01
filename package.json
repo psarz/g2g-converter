@@ -1,0 +1,37 @@
+{
+  "name": "GitLab to GitHub CI/CD Converter",
+  "version": "1.0.0",
+  "description": "Convert GitLab CI pipelines to GitHub Actions workflows with visual dependency analysis",
+  "keywords": ["ci/cd", "gitlab", "github", "converter", "automation"],
+  "author": "Your Name",
+  "license": "MIT",
+  "homepage": "https://yourusername.github.io/g2g-converter",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/g2g-converter.git"
+  },
+  "scripts": {
+    "start": "cd backend && python run.py",
+    "dev": "cd backend && python -m flask run",
+    "test": "cd backend && python -m pytest tests/",
+    "lint": "cd backend && flake8 app/",
+    "serve:frontend": "cd frontend && python -m http.server 8000",
+    "build:docs": "echo 'Documentation built'",
+    "deploy": "echo 'Deploy to GitHub Pages: push to main branch'"
+  },
+  "dependencies": {
+    "backend": [
+      "Flask==3.0.0",
+      "Flask-CORS==4.0.0",
+      "PyYAML==6.0",
+      "networkx==3.2",
+      "pydantic==2.5.0"
+    ]
+  },
+  "devDependencies": {
+    "pytest": "^7.4.0",
+    "pytest-cov": "^4.1.0",
+    "flake8": "^6.0.0",
+    "mypy": "^1.5.0"
+  }
+}

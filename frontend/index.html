@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitLab to GitHub CI/CD Converter</title>
+    <link rel="stylesheet" href="src/css/style.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="header-title">
+                    <h1>GitLab CI → GitHub Actions</h1>
+                    <p>Convert GitLab CI/CD pipelines to GitHub Actions workflows</p>
+                </div>
+                <div class="header-stats" id="headerStats" style="display: none;">
+                    <div class="stat">
+                        <span class="stat-label">Jobs</span>
+                        <span class="stat-value" id="jobCount">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Variables</span>
+                        <span class="stat-value" id="varCount">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Secrets</span>
+                        <span class="stat-value" id="secretCount">0</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Left Panel -->
+            <div class="panel left-panel">
+                <div class="panel-header">
+                    <h2>GitLab CI Configuration</h2>
+                </div>
+                <div class="panel-content">
+                    <!-- File Upload -->
+                    <div class="upload-section">
+                        <label class="upload-label">
+                            <span class="upload-icon">📁</span>
+                            <div class="upload-text">
+                                <span class="upload-main">Drop YAML file here or click to select</span>
+                                <span class="upload-sub">File will be analyzed automatically</span>
+                            </div>
+                            <input type="file" id="fileInput" accept=".yaml,.yml" hidden>
+                        </label>
+                        <p class="upload-hint">Supports .gitlab-ci.yaml and .gitlab-ci.yml files (max 16MB)</p>
+                    </div>
+
+                    <!-- File Info -->
+                    <div id="fileInfo" class="file-info" style="display: none;">
+                        <div class="file-info-content">
+                            <span class="file-icon">✓</span>
+                            <span id="fileName" class="file-name">File loaded</span>
+                            <button id="changeFileBtn" class="btn-link">Change file</button>
+                        </div>
+                    </div>
+
+                    <!-- Editor Section -->
+                    <div class="editor-section" id="editorSection" style="display: none;">
+                        <div class="editor-toolbar">
+                            <button id="clearBtn" class="btn btn-secondary">Clear</button>
+                            <button id="analyzeBtn" class="btn btn-primary">Analyze & Convert</button>
+                        </div>
+                        <textarea id="yamlEditor" placeholder="Paste your .gitlab-ci.yaml content here..." spellcheck="false"></textarea>
+                    </div>
+
+                    <!-- Validation Messages -->
+                    <div id="validationMessages"></div>
+                </div>
+            </div>
+
+            <!-- Center Panel - Visualization -->
+            <div class="panel center-panel">
+                <div class="panel-header">
+                    <h2>Dependency Graph</h2>
+                    <div class="view-toggle">
+                        <button class="toggle-btn active" data-view="graph">Graph</button>
+                        <button class="toggle-btn" data-view="details">Details</button>
+                    </div>
+                </div>
+                <div class="panel-content">
+                    <div id="graphContainer" class="graph-container"></div>
+                    <div id="detailsContainer" class="details-container" style="display: none;">
+                        <div class="details-content"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel -->
+            <div class="panel right-panel">
+                <div class="panel-header">
+                    <h2>GitHub Workflow</h2>
+                    <div class="actions">
+                        <button id="copyBtn" class="btn btn-small" style="display: none;">📋 Copy</button>
+                        <button id="downloadBtn" class="btn btn-small" style="display: none;">⬇️ Download</button>
+                    </div>
+                </div>
+                <div class="panel-content">
+                    <div id="outputContainer">
+                        <div class="empty-state">
+                            <p>Analyzed data will appear here</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Panel - Metadata -->
+        <div class="metadata-panel" id="metadataPanel" style="display: none;">
+            <div class="metadata-tabs">
+                <button class="metadata-tab active" data-tab="variables">Variables</button>
+                <button class="metadata-tab" data-tab="secrets">Secrets</button>
+                <button class="metadata-tab" data-tab="references">References</button>
+                <button class="metadata-tab" data-tab="metrics">Metrics</button>
+            </div>
+            <div class="metadata-content">
+                <div class="metadata-pane active" id="variablesPane"></div>
+                <div class="metadata-pane" id="secretsPane"></div>
+                <div class="metadata-pane" id="referencesPane"></div>
+                <div class="metadata-pane" id="metricsPane"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Indicator -->
+    <div id="loadingIndicator" class="loading-indicator" style="display: none;">
+        <div class="spinner"></div>
+        <p>Processing...</p>
+    </div>
+
+    <!-- Tooltip -->
+    <div id="tooltip" class="tooltip"></div>
+
+    <script src="src/js/api-client.js"></script>
+    <script src="src/js/graph-renderer.js"></script>
+    <script src="src/js/ui-controller.js"></script>
+    <script src="src/js/app.js"></script>
+</body>
+</html>

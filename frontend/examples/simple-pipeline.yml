@@ -1,0 +1,27 @@
+stages:
+  - build
+  - test
+
+variables:
+  NODE_VERSION: "18"
+  REGISTRY: "docker.io"
+
+build:
+  stage: build
+  image: node:18-alpine
+  script:
+    - npm ci
+    - npm run build
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1 hour
+
+test:
+  stage: test
+  image: node:18-alpine
+  dependencies:
+    - build
+  script:
+    - npm ci
+    - npm test
